@@ -111,14 +111,37 @@ public class BatchExecutionWithNullTest extends AbstractTest {
         testAddBatch2(getConnection());
     }
     
+    /**
+     * TestClearBatch with AE enabled on the connection
+     * 
+     * @throws SQLException
+     */
+    @Test
+    @Tag(Constants.xSQLv12)
+    public void testClearBatchAEOnConnection() throws SQLException {
+        try (Connection connection = PrepUtil.getConnection(connectionString + ";columnEncryptionSetting=Enabled;")) {
+            testClearBatch(connection);
+        }
+    }
+    
+    /**
+     * Test the same as testClearBatchAEOnConnection, with AE disabled
+     * 
+     * @throws SQLException
+     */
     @Test
     public void testClearBatch() throws SQLException {
-        String batchTable = RandomUtil.getIdentifier("batchTable");
+        testClearBatch(getConnection());
+    }
+    
+    public void testClearBatch(Connection conn) throws SQLException {
+        String batchTable = TestUtils
+                .escapeSingleQuotes(AbstractSQLGenerator.escapeIdentifier(RandomUtil.getIdentifier("batchTable")));
         String CREATE_TABLE_SQL = "create table " + batchTable + " (KEY1 numeric(19,0) not null, KEY2 numeric(19,0) not null, primary key (KEY1, KEY2))";
         String INSERT_ROW_SQL = "INSERT INTO " + batchTable + "(KEY1, KEY2) VALUES(?, ?)";
         
-        try (Connection conn = getConnection(); Statement s = conn.createStatement()) {
-            try (PreparedStatement pstmt = conn.prepareStatement(INSERT_ROW_SQL)) {
+        try (Statement s = conn.createStatement()) {
+            try ( PreparedStatement pstmt = conn.prepareStatement(INSERT_ROW_SQL)) {
                 s.execute(CREATE_TABLE_SQL);
                 // Set auto-commit to false
                 conn.setAutoCommit(false);
